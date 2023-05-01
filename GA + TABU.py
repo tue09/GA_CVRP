@@ -6,10 +6,9 @@ import heapq
 import time
 import itertools
 import collections
+import TABU
 
-
-file_path = "A-n32-k5.vrp.txt"
-
+global file_path
 global data
 global number_of_cities
 global number_of_trucks
@@ -17,6 +16,7 @@ global truck_capacity
 global distance_matrix
 global city
 global city_demand
+file_path = "A-n32-k5.vrp.txt"
 def read_data(path):
     global data
     global number_of_cities
@@ -54,6 +54,7 @@ def read_data(path):
 def distance(city1, city2):
     return math.sqrt((city1[0] - city2[0])**2 + (city1[1] - city2[1])**2)
 read_data(file_path)
+a = [[7, 13, 31, 19, 17, 21, 0, 30, 12, 1, 16, 29, 15, 0, 24, 14, 27, 18, 8, 11, 9, 22, 0, 26, 6, 3, 2, 23, 28, 4, 0, 20, 5, 25, 10], 1014.2418982549107, 1]
 def fitness_function(chromosome):
     temp = copy.copy(chromosome)
     temp.insert(0, 0)
@@ -62,7 +63,8 @@ def fitness_function(chromosome):
     for i in range(len(temp) - 1):
         sum = sum + distance_matrix[temp[i]][temp[i + 1]]
     return sum
-
+b1 = [[21,31,19,17,13,7,26,0,12,1,16,30,0,27,24,0,29,18,8,9,22,15,10,25,5,20,0,14,28,11,4,23,3,2,6]]
+b = [[21,31,19,17,13,7,26,0,12,1,16,30,0,27,24,0,29,18,8,9,22,15,10,25,5,20,0,14,28,11,4,23,3,2,6], fitness_function(b1[0]), 1]
 def penalty(solution, amount_of_pen, number_of_appearances):
     array = [0] * number_of_trucks
     index = 0
@@ -73,23 +75,8 @@ def penalty(solution, amount_of_pen, number_of_appearances):
     sum = 0
     for i in range(len(array)):
         if array[i] > truck_capacity: sum = sum + pow(array[i] - truck_capacity, 1 )
-    eval = pow(amount_of_pen, 1/2) * sum
+    eval = pow(amount_of_pen, 1 / 2) * sum
     return eval * number_of_appearances
-def average_declination(population):
-    real_sum = 0
-    for solution in population:
-        array = [0] * number_of_trucks
-        index = 0
-        for i in range(len(solution[0])):
-            if solution[0][i] != 0:
-                array[index] = array[index] + city_demand[solution[0][i]]
-            else:
-                index = index + 1
-        sum = 0
-        for i in range(len(array)):
-            if array[i] > truck_capacity: sum = sum + (array[i] - truck_capacity)
-        real_sum = real_sum + sum
-    return real_sum / len(population)
 def feasible_solution(solution):
     array = [0]* number_of_trucks
     index = 0
@@ -109,7 +96,12 @@ def number_of_0(chromosome):
         if i == 0:
             number = number + 1
     return number
-
+def index_of_0(chromosome):
+    set0 = []
+    for i in range(len(chromosome)):
+        if chromosome[i] == 0:
+            set0.append(i)
+    return set0
 def len_tour(route):
     temp = copy.copy(route)
     temp.insert(0,0)
@@ -123,6 +115,7 @@ def len_tour(route):
     for i in range(number_of_trucks):
         array[i] = index[i+1] - index[i] - 1
     return array
+
 def different(chromosome1, chromosome2):
     x1 = sorted(len_tour(chromosome1[0]))
     x2 = sorted(len_tour(chromosome2[0]))
@@ -261,22 +254,18 @@ def one_point_crossover(parent1, parent2, crossover_rate, amount_of_pen):
         child2 = [[], 0, 1]
         point = random.randint(0,len(parent1[0]))
         child1[0] = parent1[0][0:point]
-        num0 = number_of_0(child1[0])
         for k in parent2[0]:
             if (k in child1[0]) == False and k != 0:
                 child1[0].append(k)
-            elif k == 0 and num0 < number_of_trucks - 1:
+            elif k == 0 and number_of_0(child1[0]) != number_of_trucks - 1:
                 child1[0].append(k)
-                num0 = num0 + 1
         child1[1] = fitness_function(child1[0]) + penalty(child1, amount_of_pen, 1)
         child2[0] = parent2[0][0:point]
-        num0 = number_of_0(child2[0])
         for k in parent1[0]:
             if (k in child2[0]) == False and k != 0:
                 child2[0].append(k)
-            elif k == 0 and num0 < number_of_trucks - 1:
+            elif k == 0 and number_of_0(child2[0]) != number_of_trucks - 1:
                 child2[0].append(k)
-                num0 = num0 + 1
         child2[1] = fitness_function(child2[0]) + penalty(child2, amount_of_pen, 1)
     else:
         child1 = parent1
@@ -351,6 +340,12 @@ def crossover(population, parent1, parent2, crossover_rate, change0_rate, amount
         child2 = array2[1]
         if exist(population, child2)[0] == True:
             child2 = array2[0]
+    for element in population:
+        if different(element, child1) == False:
+            element = copy.deepcopy(child1)
+    for element in population:
+        if different(element, child2) == False:
+            element = copy.deepcopy(child2)
     return child1, child2
 
 def swap_mutation(chromosome, mutation_rate, amount_of_pen):
@@ -484,35 +479,35 @@ def mutation(population, child, mutation_rate, change0_rate, amount_of_pen):
         if different(element, child1) == False:
             element = copy.deepcopy(child1)
     return child1
+
+
 def Genetic_Algorithm(current_population, tournament_size, crossover_rate, mutation_rate, number_iteration):
-    change = 0
     best = [[], pow(10, number_of_trucks)]
     feasible = []
     for element in current_population:
         if feasible_solution(element) == True: feasible.append(element)
     if feasible != []:
         best = min(feasible, key=lambda x: x[1])
-    for i in range(2*number_iteration):
+    for i in range(number_iteration):
         print(i)
-        print("best is: ", best[1])
+        print(best[1])
         new_population = []
         number = 0
         for element in current_population:
             if feasible_solution(element) == True: number = number + 1
+        amount_of_pen = ( min(50, number_of_cities) - number )
+        change0_rate = mutation_rate
         change0_rate = 2 / number_of_trucks
-        amount_of_pen = (min(50, number_of_cities) - number)
         for j in range(len(current_population)):
             for k in range(20):
                 current_population[j] = swap_truck_position(current_population[j])
-        for j in range(int(len(current_population)/2) ):
+        for j in range(int(len(current_population)/2)):
             #Crossover:
             if i <= number_iteration/2: parent1, parent2 = tournament_selection(current_population, tournament_size)
             else: parent1, parent2 = roulette_wheel_selection(current_population), roulette_wheel_selection(current_population)
             child1, child2 = crossover(new_population, parent1, parent2, crossover_rate, change0_rate, amount_of_pen)
-
             #Mutation:
             child1, child2 = mutation(new_population, child1, mutation_rate, change0_rate, amount_of_pen), mutation(new_population, child2, mutation_rate, change0_rate, amount_of_pen)
-
             new_population.append(child1)
             new_population.append(child2)
         tick = int(len(current_population) * 70/100)
@@ -522,6 +517,9 @@ def Genetic_Algorithm(current_population, tournament_size, crossover_rate, mutat
             if exist(new_population1, k)[0] == False: new_population1.append(k)
             if len(new_population1) == tick: break
         length = len(new_population1)
+        """tick = int(len(current_population) * 70 / 100)
+        if length < tick:
+            new_population1.extend(random.choices(new_population, k = tick - length))"""
         current_population = sorted(current_population, key = lambda x: x[1])
         for k in current_population:
             if exist(new_population1, k)[0] == False: new_population1.append(k)
@@ -529,32 +527,36 @@ def Genetic_Algorithm(current_population, tournament_size, crossover_rate, mutat
         length = len(new_population1)
         temp = []
         if length != min(50, number_of_cities):
+            """current_population = current_population + new_population[:min(50, number_of_cities) - length]"""
             temp = initialize_population(min(50, number_of_cities) - length + 1, amount_of_pen)
             temp.pop(0)
         new_population1 = new_population1 + temp
+        random.shuffle(new_population1)
+        tick = int(len(new_population1) * 5 / 100)
+        arr = random.choices(new_population1, k=tick)
+        for i in range(len(arr)):
+            arr[i][0] = list(TABU.Tabu_search_for_CVRP(file_path, 40, arr[i]))
+        new_population1[:tick] = arr
         for j in range(len(new_population1)):
             temp = exist(current_population, new_population1[j])
             if temp[0] == True:
                 new_population1[j][2] == temp[1][2] + 1
                 new_population1[j][1] = fitness_function(new_population1[j][0]) + penalty(new_population1[j], amount_of_pen, new_population1[j][2])
-
         current_population = new_population1
-        current_population = sorted(current_population, key = lambda x:x[1])
         feasible = []
         for element in current_population:
             if feasible_solution(element) == True: feasible.append(element)
         if feasible != []:
-            temp = feasible[0]
-            if round(temp[1], 5) <= round(best[1], 5): best = copy.deepcopy(temp)
+            temp = min(feasible, key=lambda x: x[1])
+            if temp[1] <= best[1]: best = copy.deepcopy(temp)
             if i >= number_iteration : break
     return best
-
 start=time.time()
-k = 5
+k = 1
 array = []
 for i in range(k):
     print(i)
-    solution = Genetic_Algorithm(initialize_population(min(50, number_of_cities), 1), 4, 0.95, 1/min(50, number_of_cities), 500)
+    solution = Genetic_Algorithm(initialize_population(min(50, number_of_cities), 1), 4, 0.95, 1/min(50, number_of_cities), 70)
     array.append(solution)
 end=time.time()
 time=end-start
@@ -569,4 +571,4 @@ average = sum/k
 temp = 0
 for i in range(len(array)):
     temp = temp + pow(array[i][1] - average, 2)
-"""STD = math.sqrt(temp/(k - 1))"""
+'''STD = math.sqrt(temp/(k - 1))'''
