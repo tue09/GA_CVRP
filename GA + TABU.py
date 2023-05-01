@@ -54,7 +54,6 @@ def read_data(path):
 def distance(city1, city2):
     return math.sqrt((city1[0] - city2[0])**2 + (city1[1] - city2[1])**2)
 read_data(file_path)
-a = [[7, 13, 31, 19, 17, 21, 0, 30, 12, 1, 16, 29, 15, 0, 24, 14, 27, 18, 8, 11, 9, 22, 0, 26, 6, 3, 2, 23, 28, 4, 0, 20, 5, 25, 10], 1014.2418982549107, 1]
 def fitness_function(chromosome):
     temp = copy.copy(chromosome)
     temp.insert(0, 0)
@@ -63,8 +62,6 @@ def fitness_function(chromosome):
     for i in range(len(temp) - 1):
         sum = sum + distance_matrix[temp[i]][temp[i + 1]]
     return sum
-b1 = [[21,31,19,17,13,7,26,0,12,1,16,30,0,27,24,0,29,18,8,9,22,15,10,25,5,20,0,14,28,11,4,23,3,2,6]]
-b = [[21,31,19,17,13,7,26,0,12,1,16,30,0,27,24,0,29,18,8,9,22,15,10,25,5,20,0,14,28,11,4,23,3,2,6], fitness_function(b1[0]), 1]
 def penalty(solution, amount_of_pen, number_of_appearances):
     array = [0] * number_of_trucks
     index = 0
@@ -517,9 +514,6 @@ def Genetic_Algorithm(current_population, tournament_size, crossover_rate, mutat
             if exist(new_population1, k)[0] == False: new_population1.append(k)
             if len(new_population1) == tick: break
         length = len(new_population1)
-        """tick = int(len(current_population) * 70 / 100)
-        if length < tick:
-            new_population1.extend(random.choices(new_population, k = tick - length))"""
         current_population = sorted(current_population, key = lambda x: x[1])
         for k in current_population:
             if exist(new_population1, k)[0] == False: new_population1.append(k)
@@ -527,7 +521,6 @@ def Genetic_Algorithm(current_population, tournament_size, crossover_rate, mutat
         length = len(new_population1)
         temp = []
         if length != min(50, number_of_cities):
-            """current_population = current_population + new_population[:min(50, number_of_cities) - length]"""
             temp = initialize_population(min(50, number_of_cities) - length + 1, amount_of_pen)
             temp.pop(0)
         new_population1 = new_population1 + temp
