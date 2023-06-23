@@ -6,6 +6,7 @@ import heapq
 import time
 import itertools
 import collections
+
 import TABU
 
 global file_path
@@ -18,13 +19,6 @@ global city
 global city_demand
 file_path = "A-n32-k5.vrp.txt"
 def read_data(path):
-    global data
-    global number_of_cities
-    global number_of_trucks
-    global truck_capacity
-    global distance_matrix
-    global city
-    global city_demand
     city_demand = []
     f = open(path)
     data = f.readlines()
