@@ -18,13 +18,6 @@ global distance_matrix
 global city
 global city_demand
 def read_data(path):
-    global data
-    global number_of_cities
-    global number_of_trucks
-    global truck_capacity
-    global distance_matrix
-    global city
-    global city_demand
     city_demand = []
     f = open(path)
     data = f.readlines()
